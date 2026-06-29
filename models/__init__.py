@@ -43,6 +43,9 @@ class Item(SQLModel, table=True):
         color: 头像背景色。
         detail_title: 详情页标题。
         detail_body: 详情页正文内容。
+        is_unread: 是否未读。
+        is_pinned: 是否置顶。
+        is_hidden: 是否隐藏。
     """
 
     id: str = Field(primary_key=True)
@@ -54,9 +57,12 @@ class Item(SQLModel, table=True):
     color: str = "#3b7cff"
     detail_title: str = ""
     detail_body: str = ""
+    is_unread: bool = Field(default=False)
+    is_pinned: bool = Field(default=False)
+    is_hidden: bool = Field(default=False)
 
     module: Module | None = Relationship(back_populates="items")
-    messages: list["Message"] = Relationship(back_populates="item")
+    messages: list["Message"] = Relationship(back_populates="item", cascade_delete=True)
 
 
 class Message(SQLModel, table=True):

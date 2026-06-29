@@ -4,13 +4,20 @@
 - 点击条目切换详情页
 - 拖动分隔条调整列表宽度
 - 搜索框（UI 占位）
+- 右键菜单（标记未读、置顶、隐藏、删除）
 """
 
 import flet as ft
 
 from components.avatar import avatar_circle
 from my_utils.route import parse_workspace
-from services.repository import get_items, get_modules
+from services.repository import (
+    delete_item,
+    get_item,
+    get_items,
+    get_modules,
+    update_item,
+)
 import theme
 
 
@@ -29,10 +36,10 @@ def ListPanel():
     module_id, item_id = parse_workspace(ft.use_route_location())
 
     list_width, set_list_width = ft.use_state(theme.LIST_DEFAULT)
+    refresh_count, set_refresh_count = ft.use_state(0)
     items = get_items(module_id)
     module_label = next((m.label for m in get_modules() if m.id == module_id), "")
 
-    # 无选中项时自动跳转到第一个条目
     if not item_id and items:
         ft.context.page.navigate(f"/{module_id}/{items[0].id}")
         return ft.Container()
@@ -62,6 +69,31 @@ def ListPanel():
         new_width = max(theme.LIST_MIN, min(theme.LIST_MAX, list_width + delta))
         set_list_width(new_width)
 
+    def _handle_menu_action(action: str, target_item_id: str):
+        """处理右键菜单操作。
+
+        Args:
+            action: 操作类型（mark_unread, toggle_pin, hide, delete）。
+            target_item_id: 条目 ID。
+        """
+        if action == "mark_unread":
+            update_item(target_item_id, is_unread=True)
+        elif action == "toggle_pin":
+            current_item = get_item(target_item_id)
+            if current_item:
+                update_item(target_item_id, is_pinned=not current_item.is_pinned)
+        elif action == "hide":
+            update_item(target_item_id, is_hidden=True)
+        elif action == "delete":
+            delete_item(target_item_id)
+        if action in ("hide", "delete") and target_item_id == item_id:
+            remaining_items = get_items(module_id)
+            if remaining_items:
+                ft.context.page.navigate(f"/{module_id}/{remaining_items[0].id}")
+            else:
+                ft.context.page.navigate("/")
+        set_refresh_count(refresh_count + 1)
+
     def _build_list_item(item) -> ft.Container:
         """构建单个列表条目组件。
 
@@ -72,53 +104,90 @@ def ListPanel():
             列表条目容器。
         """
         is_selected = item.id == item_id
-        return ft.Container(
-            bgcolor=theme.C_ACCENT_SOFT if is_selected else None,
-            border=ft.Border.only(
-                left=ft.BorderSide(3, theme.C_ACCENT if is_selected else "transparent")
+        menu_items = [
+            ft.PopupMenuItem(
+                content="标记为未读",
+                icon=ft.Icons.MARK_AS_UNREAD,
+                on_click=lambda e, i=item.id: _handle_menu_action("mark_unread", i),
             ),
-            padding=ft.Padding.only(left=13, right=14, top=10, bottom=10),
-            ink=True,
-            on_click=select_item(item.id),
-            content=ft.Row(
-                [
-                    avatar_circle(item.name, item.color, 44),
-                    ft.Column(
-                        [
-                            ft.Row(
-                                [
-                                    ft.Text(
-                                        item.name,
-                                        size=14,
-                                        weight=(
-                                            ft.FontWeight.W_600
-                                            if is_selected
-                                            else ft.FontWeight.W_500
-                                        ),
-                                        color=theme.C_TEXT,
-                                        expand=True,
-                                        max_lines=1,
-                                        overflow=ft.TextOverflow.ELLIPSIS,
+            ft.PopupMenuItem(
+                content="取消置顶" if item.is_pinned else "置顶",
+                icon=ft.Icons.PUSH_PIN
+                if item.is_pinned
+                else ft.Icons.PUSH_PIN_OUTLINED,
+                on_click=lambda e, i=item.id: _handle_menu_action("toggle_pin", i),
+            ),
+            ft.PopupMenuItem(),
+            ft.PopupMenuItem(
+                content="隐藏",
+                icon=ft.Icons.HIDE_SOURCE_OUTLINED,
+                on_click=lambda e, i=item.id: _handle_menu_action("hide", i),
+            ),
+            ft.PopupMenuItem(
+                content="删除",
+                icon=ft.Icons.DELETE_OUTLINED,
+                on_click=lambda e, i=item.id: _handle_menu_action("delete", i),
+            ),
+        ]
+        row_content = ft.Row(
+            [
+                avatar_circle(item.name, item.color, 44),
+                ft.Column(
+                    [
+                        ft.Row(
+                            [
+                                ft.Text(
+                                    item.name,
+                                    size=14,
+                                    weight=(
+                                        ft.FontWeight.W_600
+                                        if is_selected
+                                        else ft.FontWeight.W_500
                                     ),
-                                    ft.Text(item.time, size=11, color=theme.C_TEXT_SEC),
-                                ],
-                                alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-                            ),
-                            ft.Text(
-                                item.preview,
-                                size=12,
-                                color=(
-                                    theme.C_ACCENT if is_selected else theme.C_TEXT_SEC
+                                    color=theme.C_TEXT,
+                                    expand=True,
+                                    max_lines=1,
+                                    overflow=ft.TextOverflow.ELLIPSIS,
                                 ),
-                                max_lines=1,
-                                overflow=ft.TextOverflow.ELLIPSIS,
-                            ),
-                        ],
-                        spacing=4,
-                        expand=True,
-                    ),
-                ],
-                spacing=12,
+                                ft.Text(item.time, size=11, color=theme.C_TEXT_SEC),
+                            ],
+                            alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                        ),
+                        ft.Text(
+                            item.preview,
+                            size=12,
+                            color=(theme.C_ACCENT if is_selected else theme.C_TEXT_SEC),
+                            max_lines=1,
+                            overflow=ft.TextOverflow.ELLIPSIS,
+                        ),
+                    ],
+                    spacing=4,
+                    expand=True,
+                ),
+            ],
+            spacing=12,
+        )
+
+        return ft.ContextMenu(
+            secondary_items=menu_items,
+            secondary_trigger=ft.ContextMenuTrigger.DOWN,
+            content=ft.Container(
+                bgcolor=(
+                    theme.C_ACCENT_SOFT
+                    if is_selected
+                    else "#f0f5ff"
+                    if item.is_pinned
+                    else None
+                ),
+                border=ft.Border.only(
+                    left=ft.BorderSide(
+                        3, theme.C_ACCENT if is_selected else "transparent"
+                    )
+                ),
+                padding=ft.Padding.only(left=13, right=14, top=10, bottom=10),
+                ink=True,
+                on_click=select_item(item.id),
+                content=row_content,
             ),
         )
 

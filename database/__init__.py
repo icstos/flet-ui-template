@@ -43,14 +43,36 @@ def get_session() -> Session:
     return Session(get_engine())
 
 
+def _migrate_item_table() -> None:
+    """迁移 Item 表，添加新字段。
+
+    为已存在的 Item 表添加 is_unread、is_pinned、is_hidden 字段。
+    SQLite 不支持 IF NOT EXISTS，所以需要捕获 OperationalError。
+    """
+    engine = get_engine()
+    migrations = [
+        "ALTER TABLE item ADD COLUMN is_unread BOOLEAN DEFAULT FALSE",
+        "ALTER TABLE item ADD COLUMN is_pinned BOOLEAN DEFAULT FALSE",
+        "ALTER TABLE item ADD COLUMN is_hidden BOOLEAN DEFAULT FALSE",
+    ]
+    with engine.connect() as conn:
+        for migration in migrations:
+            try:
+                conn.execute(migration)
+            except Exception:
+                pass
+        conn.commit()
+
+
 def init_db() -> None:
     """初始化数据库。
 
     创建所有数据表，如果数据库为空则填充种子数据。
+    如果 Item 表已存在，迁移添加新字段。
     """
     SQLModel.metadata.create_all(get_engine())
+    _migrate_item_table()
     with get_session() as session:
-        # 检查是否已有模块数据，有则说明已初始化
         if session.exec(select(Module)).first():
             return
         _seed_database(session)

@@ -26,18 +26,21 @@ def get_modules() -> tuple[Module, ...]:
 
 
 def get_items(module_id: str) -> list[Item]:
-    """获取指定模块下的所有条目。
+    """获取指定模块下的所有未隐藏条目。
 
     Args:
         module_id: 模块 ID。
 
     Returns:
-        条目列表，按 ID 排序。
+        条目列表，置顶条目优先，其余按 ID 排序。
     """
     with get_session() as session:
         return list(
             session.exec(
-                select(Item).where(Item.module_id == module_id).order_by(Item.id)
+                select(Item)
+                .where(Item.module_id == module_id)
+                .where(Item.is_hidden == False)
+                .order_by(Item.is_pinned.desc(), Item.id)
             ).all()
         )
 
@@ -114,3 +117,43 @@ def get_default_item_id(module_id: str) -> str:
     """
     items = get_items(module_id)
     return items[0].id if items else ""
+
+
+def update_item(item_id: str, **kwargs) -> Item | None:
+    """更新条目的指定字段。
+
+    Args:
+        item_id: 条目 ID。
+        **kwargs: 要更新的字段名和值。
+
+    Returns:
+        更新后的条目对象，不存在时返回 None。
+    """
+    with get_session() as session:
+        item = session.get(Item, item_id)
+        if not item:
+            return None
+        for key, value in kwargs.items():
+            if hasattr(item, key):
+                setattr(item, key, value)
+        session.commit()
+        session.refresh(item)
+        return item
+
+
+def delete_item(item_id: str) -> bool:
+    """删除指定条目。
+
+    Args:
+        item_id: 条目 ID。
+
+    Returns:
+        删除成功返回 True，失败返回 False。
+    """
+    with get_session() as session:
+        item = session.get(Item, item_id)
+        if not item:
+            return False
+        session.delete(item)
+        session.commit()
+        return True
