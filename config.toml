@@ -1,0 +1,39 @@
+[layout]
+nav_width = 68
+list_min = 200
+list_max = 480
+list_default = 300
+title_bar_h = 40
+
+[window]
+title = "CSTOS"
+subtitle = "企业协作"
+width = 1180
+height = 720
+min_width = 920
+min_height = 520
+frameless = true
+
+[colors]
+sidebar = "#F7F9FB"
+sidebar_hover = "#EEF4FB"
+sidebar_active = "#E6F0FF"
+accent = "#3b7cff"
+accent_soft = "#e8f0ff"
+list_bg = "#ffffff"
+content_bg = "#f4f6f9"
+border = "#e9eef4"
+text = "#1a1d26"
+text_sec = "#8b92a5"
+title_bar = "#F7F9FB"
+search_bg = "#f0f2f6"
+icon_inactive = "#7d8496"
+window_btn_icon = "#b8bcc8"
+title_text = "#e8eaef"
+title_subtitle = "#6b7288"
+input_bg = "#f4f6f9"
+chat_self_bg = "#ffffff"
+chat_self_border = "#e4e8ef"
+
+[database]
+url = "sqlite:///data/cstos.db"

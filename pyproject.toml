@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cstos"
+version = "0.1.0"
+description = "CSTOS desktop application"
+requires-python = ">=3.12"
+dependencies = ["flet>=0.85.3", "sqlmodel>=0.0.22"]
+
+[project.scripts]
+cstos = "main:main"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+include = [
+    "components",
+    "database",
+    "models",
+    "my_utils",
+    "services",
+    "views",
+    "*",
+]
