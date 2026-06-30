@@ -30,6 +30,11 @@ def setup_window(page: ft.Page) -> None:
     page.spacing = 0
     page.bgcolor = colors.content_bg
 
+    page.fonts = {
+        "AlibabaPuHuiTi": "assets/fonts/AlibabaPuHuiTi-3-55-Regular.otf",
+    }
+    page.theme = ft.Theme(font_family="AlibabaPuHuiTi")
+
     page.window.width = win.width
     page.window.height = win.height
     page.window.min_width = win.min_width
