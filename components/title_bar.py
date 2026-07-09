@@ -1,17 +1,17 @@
 """自定义标题栏组件模块。
 
 提供无边框窗口的自定义标题栏，包括：
-- 窗口图标和标题
+- 应用图标 + 多标签页栏（与窗口控制按钮同行）
 - 最小化、最大化、关闭按钮
 - 双击标题栏切换最大化
-- 拖动标题栏移动窗口
+- 拖动标题栏空白区域移动窗口
 """
 
 import asyncio
 
 import flet as ft
 
-from config import get_config
+from views.tab_bar import Tab, TabBar
 import theme
 
 # 窗口按钮悬停背景色
@@ -20,15 +20,26 @@ _BTN_CLOSE_HOVER_BG = "#e81123"
 
 
 @ft.component
-def TitleBar():
+def TitleBar(
+    tabs: list[Tab],
+    active_route: str,
+    on_select,
+    on_close,
+):
     """自定义标题栏组件。
 
+    将多标签页栏嵌入标题栏，与窗口控制按钮在同一行。
     管理窗口状态（最大化/还原），提供窗口控制按钮。
+
+    Args:
+        tabs: 标签列表。
+        active_route: 当前激活的路由路径。
+        on_select: 选中标签的回调。
+        on_close: 关闭标签的回调。
 
     Returns:
         标题栏容器。
     """
-    win = get_config().window
     maximized, set_maximized = ft.use_state(False)
     hovered_btn, set_hovered_btn = ft.use_state("")
 
@@ -77,7 +88,7 @@ def TitleBar():
         """双击标题栏切换最大化状态。"""
         on_toggle_maximize(_)
 
-    def on_close(_) -> None:
+    def on_close_window(_) -> None:
         """关闭窗口。"""
         asyncio.create_task(ft.context.page.window.close())
 
@@ -128,40 +139,40 @@ def TitleBar():
         bgcolor=theme.C_TITLE_BAR,
         content=ft.Row(
             controls=[
-                # 左侧：可拖动区域（图标 + 标题）
+                # 可拖动区域（图标 + 标签栏 + 空白拖动区）
                 ft.WindowDragArea(
                     expand=True,
                     maximizable=True,
                     content=ft.GestureDetector(
                         on_double_tap=on_double_tap,
-                        content=ft.Container(
-                            padding=ft.Padding.only(left=12),
-                            content=ft.Row(
-                                [
-                                    ft.Icon(
-                                        ft.Icons.APPS, size=16, color=theme.C_ACCENT
+                        content=ft.Row(
+                            [
+                                # 应用图标
+                                ft.Container(
+                                    padding=ft.Padding.only(left=12, right=8),
+                                    content=ft.Icon(
+                                        ft.Icons.APPS,
+                                        size=16,
+                                        color=theme.C_ACCENT,
                                     ),
-                                    ft.Text(
-                                        win.title,
-                                        size=13,
-                                        weight=ft.FontWeight.W_600,
-                                        color=theme.C_TITLE_TEXT,
-                                    ),
-                                    ft.Text(
-                                        f"· {win.subtitle}",
-                                        size=12,
-                                        color=theme.C_TITLE_SUB,
-                                    ),
-                                ],
-                                spacing=8,
-                            ),
+                                ),
+                                # 标签栏
+                                TabBar(
+                                    tabs=tabs,
+                                    active_route=active_route,
+                                    on_select=on_select,
+                                    on_close=on_close,
+                                ),
+                            ],
+                            spacing=0,
+                            vertical_alignment=ft.CrossAxisAlignment.CENTER,
                         ),
                     ),
                 ),
                 # 右侧：窗口控制按钮
                 _window_btn("min", ft.Icons.REMOVE, on_minimize),
                 _window_btn("max", maximize_icon, on_toggle_maximize),
-                _window_btn("close", ft.Icons.CLOSE, on_close, is_close=True),
+                _window_btn("close", ft.Icons.CLOSE, on_close_window, is_close=True),
             ],
             spacing=0,
         ),
