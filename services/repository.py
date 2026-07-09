@@ -141,6 +141,28 @@ def update_item(item_id: str, **kwargs) -> Item | None:
         return item
 
 
+def search_items(query: str) -> list[Item]:
+    """跨所有模块搜索未隐藏的条目。
+
+    当查询为空时返回所有条目；否则匹配名称或预览文本包含查询字符串的条目。
+
+    Args:
+        query: 搜索关键词。
+
+    Returns:
+        匹配的条目列表，置顶条目优先。
+    """
+    with get_session() as session:
+        stmt = select(Item).where(Item.is_hidden == False)
+        q = query.strip()
+        if q:
+            stmt = stmt.where(
+                Item.name.contains(q) | Item.preview.contains(q)
+            )
+        stmt = stmt.order_by(Item.is_pinned.desc(), Item.name)
+        return list(session.exec(stmt).all())
+
+
 def delete_item(item_id: str) -> bool:
     """删除指定条目。
 
