@@ -28,8 +28,11 @@ def NavRail():
     location = ft.use_route_location()
 
     # 获取当前登录用户信息
-    username = ft.context.page.session.store.get("username") or "用户"
-    avatar_color = ft.context.page.session.store.get("avatar_color") or theme.C_ACCENT
+    from my_utils.auth_storage import load_auth
+
+    auth = load_auth()
+    username = auth["username"] if auth else "用户"
+    avatar_color = auth["avatar_color"] if auth else theme.C_ACCENT
 
     def nav_to(module_id: str):
         """生成导航到指定模块的点击处理函数。

@@ -37,7 +37,9 @@ def ShellLayout():
 
     def check_auth():
         """检查登录状态，未登录时跳转到登录页。"""
-        if not ft.context.page.session.store.get("user_id"):
+        from my_utils.auth_storage import load_auth
+
+        if not load_auth():
             ft.context.page.navigate("/login")
 
     ft.use_effect(check_auth, dependencies=[location])

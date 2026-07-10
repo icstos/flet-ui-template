@@ -3,7 +3,7 @@
 # custom path
 output
 docs
-
+data/
 # custom file
 *.pt
 *.log

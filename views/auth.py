@@ -7,6 +7,7 @@
 
 import flet as ft
 
+from my_utils.auth_storage import clear_auth, load_auth, save_auth
 from services.repository import (
     authenticate,
     change_password,
@@ -89,9 +90,7 @@ def LoginView():
         if not user:
             set_error("用户名或密码错误")
             return
-        ft.context.page.session.store.set("user_id", user.id)
-        ft.context.page.session.store.set("username", user.username)
-        ft.context.page.session.store.set("avatar_color", user.avatar_color)
+        save_auth(user.id, user.username, user.avatar_color)
         default = get_default_item_id("chat")
         ft.context.page.navigate(f"/chat/{default}")
 
@@ -158,9 +157,7 @@ def RegisterView():
             set_error("用户名已存在")
             return
 
-        ft.context.page.session.store.set("user_id", user.id)
-        ft.context.page.session.store.set("username", user.username)
-        ft.context.page.session.store.set("avatar_color", user.avatar_color)
+        save_auth(user.id, user.username, user.avatar_color)
         default = get_default_item_id("chat")
         ft.context.page.navigate(f"/chat/{default}")
 
@@ -226,7 +223,8 @@ def ChangePasswordView():
             set_success("")
             return
 
-        user_id = ft.context.page.session.store.get("user_id")
+        auth = load_auth()
+        user_id = auth["user_id"] if auth else None
         if not user_id:
             set_error("请先登录")
             set_success("")

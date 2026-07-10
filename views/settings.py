@@ -11,6 +11,7 @@ import importlib
 import flet as ft
 
 from config import get_config, save_config
+from my_utils.auth_storage import clear_auth
 from views.auth import ChangePasswordView
 import theme
 
@@ -154,9 +155,7 @@ def SettingsView():
                 ft.ElevatedButton(
                     "退出登录",
                     on_click=lambda _: (
-                        ft.context.page.session.store.remove("user_id"),
-                        ft.context.page.session.store.remove("username"),
-                        ft.context.page.session.store.remove("avatar_color"),
+                        clear_auth(),
                         ft.context.page.navigate("/login"),
                     ),
                     bgcolor="#e74c3c",
