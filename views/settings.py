@@ -11,6 +11,7 @@ import importlib
 import flet as ft
 
 from config import get_config, save_config
+from views.auth import ChangePasswordView
 import theme
 
 # 预设主题色列表
@@ -144,6 +145,23 @@ def SettingsView():
                     spacing=8,
                 ),
                 ft.Text("应用偏好与账号管理", size=14, color=theme.C_TEXT_SEC),
+                ft.Divider(),
+                # 修改密码区
+                ChangePasswordView(),
+                ft.Divider(),
+                # 退出登录
+                ft.Text("账号操作", weight=ft.FontWeight.W_600, color=theme.C_TEXT),
+                ft.ElevatedButton(
+                    "退出登录",
+                    on_click=lambda _: (
+                        ft.context.page.session.store.remove("user_id"),
+                        ft.context.page.session.store.remove("username"),
+                        ft.context.page.session.store.remove("avatar_color"),
+                        ft.context.page.navigate("/login"),
+                    ),
+                    bgcolor="#e74c3c",
+                    color="#ffffff",
+                ),
                 ft.Divider(),
                 # 主题色设置区
                 ft.Text("主题色", weight=ft.FontWeight.W_600, color=theme.C_TEXT),

@@ -85,3 +85,21 @@ class Message(SQLModel, table=True):
     sort_order: int = 0
 
     item: Item | None = Relationship(back_populates="messages")
+
+
+class User(SQLModel, table=True):
+    """用户模型。
+
+    表示系统用户，用于登录认证。
+
+    Attributes:
+        id: 用户自增 ID。
+        username: 用户名（唯一）。
+        password_hash: 密码哈希值（格式：salt$hash）。
+        avatar_color: 头像背景色。
+    """
+
+    id: int | None = Field(default=None, primary_key=True)
+    username: str = Field(unique=True, index=True)
+    password_hash: str
+    avatar_color: str = "#3b7cff"

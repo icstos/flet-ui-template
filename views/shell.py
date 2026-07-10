@@ -35,6 +35,13 @@ def ShellLayout():
     tabs, set_tabs = ft.use_state([])
     location = ft.use_route_location()
 
+    def check_auth():
+        """检查登录状态，未登录时跳转到登录页。"""
+        if not ft.context.page.session.store.get("user_id"):
+            ft.context.page.navigate("/login")
+
+    ft.use_effect(check_auth, dependencies=[location])
+
     def setup_keyboard():
         """注册全局键盘快捷键监听。"""
         page = ft.context.page

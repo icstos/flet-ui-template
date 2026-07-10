@@ -5,11 +5,13 @@
 """
 
 from functools import lru_cache
+import hashlib
+import secrets
 
 from sqlmodel import select
 
 from database import get_session
-from models import Item, Message, Module
+from models import Item, Message, Module, User
 
 
 @lru_cache(maxsize=1)
@@ -179,3 +181,119 @@ def delete_item(item_id: str) -> bool:
         session.delete(item)
         session.commit()
         return True
+
+
+# ── 用户认证 ─────────────────────────────────────────────
+
+
+def _hash_password(password: str) -> str:
+    """哈希密码，返回 salt$hash 格式字符串。
+
+    Args:
+        password: 明文密码。
+
+    Returns:
+        salt$hash 格式的密码哈希字符串。
+    """
+    salt = secrets.token_hex(16)
+    hash_value = hashlib.pbkdf2_hmac(
+        "sha256", password.encode(), salt.encode(), 100000
+    )
+    return f"{salt}${hash_value.hex()}"
+
+
+def _verify_password(password: str, stored: str) -> bool:
+    """验证密码是否匹配存储的哈希值。
+
+    Args:
+        password: 明文密码。
+        stored: 存储的 salt$hash 格式字符串。
+
+    Returns:
+        匹配返回 True，不匹配返回 False。
+    """
+    parts = stored.split("$", 1)
+    if len(parts) != 2:
+        return False
+    salt, hash_hex = parts
+    new_hash = hashlib.pbkdf2_hmac(
+        "sha256", password.encode(), salt.encode(), 100000
+    )
+    return new_hash.hex() == hash_hex
+
+
+def register_user(username: str, password: str) -> User | None:
+    """注册新用户。
+
+    用户名已存在时返回 None。
+
+    Args:
+        username: 用户名。
+        password: 明文密码。
+
+    Returns:
+        新创建的用户对象，用户名已存在时返回 None。
+    """
+    with get_session() as session:
+        existing = session.exec(
+            select(User).where(User.username == username)
+        ).first()
+        if existing:
+            return None
+        user = User(username=username, password_hash=_hash_password(password))
+        session.add(user)
+        session.commit()
+        session.refresh(user)
+        return user
+
+
+def authenticate(username: str, password: str) -> User | None:
+    """验证用户登录凭据。
+
+    Args:
+        username: 用户名。
+        password: 明文密码。
+
+    Returns:
+        认证成功的用户对象，失败返回 None。
+    """
+    with get_session() as session:
+        user = session.exec(
+            select(User).where(User.username == username)
+        ).first()
+        if not user or not _verify_password(password, user.password_hash):
+            return None
+        return user
+
+
+def change_password(user_id: int, old_password: str, new_password: str) -> bool:
+    """修改用户密码。
+
+    Args:
+        user_id: 用户 ID。
+        old_password: 旧密码。
+        new_password: 新密码。
+
+    Returns:
+        修改成功返回 True，旧密码错误或用户不存在返回 False。
+    """
+    with get_session() as session:
+        user = session.get(User, user_id)
+        if not user or not _verify_password(old_password, user.password_hash):
+            return False
+        user.password_hash = _hash_password(new_password)
+        session.commit()
+        return True
+
+
+def get_user(user_id: int) -> User | None:
+    """根据 ID 获取用户。
+
+    Args:
+        user_id: 用户 ID。
+
+    Returns:
+        用户对象，不存在时返回 None。
+    """
+    with get_session() as session:
+        return session.get(User, user_id)

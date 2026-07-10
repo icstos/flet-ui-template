@@ -17,7 +17,7 @@ def NavRail():
 
     垂直布局：
     - 顶部：各功能模块导航按钮
-    - 底部：用户头像 + 设置按钮
+    - 底部：用户头像（显示用户名首字）+ 设置按钮 + 退出登录按钮
 
     根据当前路由高亮对应的模块按钮。
 
@@ -26,6 +26,10 @@ def NavRail():
     """
     modules = get_modules()
     location = ft.use_route_location()
+
+    # 获取当前登录用户信息
+    username = ft.context.page.session.store.get("username") or "用户"
+    avatar_color = ft.context.page.session.store.get("avatar_color") or theme.C_ACCENT
 
     def nav_to(module_id: str):
         """生成导航到指定模块的点击处理函数。
@@ -83,7 +87,7 @@ def NavRail():
                     padding=ft.Padding.only(bottom=8),
                     content=ft.Column(
                         [
-                            avatar_circle("我", theme.C_ACCENT, 36),
+                            avatar_circle(username[0] if username else "我", avatar_color, 36),
                             ft.Container(
                                 width=40,
                                 height=40,

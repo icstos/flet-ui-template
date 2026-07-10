@@ -8,7 +8,7 @@ from pathlib import Path
 from sqlmodel import Session, SQLModel, create_engine, select
 
 from config import get_config
-from models import Item, Message, Module
+from models import Item, Message, Module, User
 
 # 数据库引擎单例
 _engine = None
@@ -77,6 +77,9 @@ def init_db() -> None:
             return
         _seed_database(session)
         session.commit()
+
+    # 添加默认用户（admin/123456）
+    _ensure_default_user()
 
 
 def _seed_database(session: Session) -> None:
@@ -256,3 +259,27 @@ def _seed_database(session: Session) -> None:
         Message(item_id=iid, role=role, text=text, sort_order=order)
         for iid, role, text, order in messages_data
     )
+
+
+def _ensure_default_user() -> None:
+    """确保默认用户存在。
+
+    如果用户表为空，创建默认用户（admin / 123456）。
+    """
+    import hashlib
+    import secrets
+
+    with get_session() as session:
+        if session.exec(select(User)).first():
+            return
+        salt = secrets.token_hex(16)
+        hash_value = hashlib.pbkdf2_hmac(
+            "sha256", "123456".encode(), salt.encode(), 100000
+        )
+        user = User(
+            username="admin",
+            password_hash=f"{salt}${hash_value.hex()}",
+            avatar_color="#3b7cff",
+        )
+        session.add(user)
+        session.commit()

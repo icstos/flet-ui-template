@@ -9,6 +9,7 @@
 import flet as ft
 
 from services.repository import get_default_item_id
+from views.auth import LoginView, RegisterView
 from views.detail_chat import ChatDetail
 from views.detail_generic import GenericDetail
 from views.settings import SettingsView
@@ -32,12 +33,18 @@ def App():
     """应用根组件。
 
     配置完整的路由树：
-    - ShellLayout 作为外层布局（标题栏 + 导航栏）
+    - /login、/register 为独立全屏页面（无侧边栏）
+    - ShellLayout 作为主应用外层布局（标题栏 + 导航栏）
     - 各功能模块使用 WorkspaceLayout（列表 + 详情）
     - 未匹配路由统一重定向到默认页面
     """
     return ft.Router(
         [
+            # 登录页（独立全屏，无 ShellLayout）
+            ft.Route(path="login", component=LoginView),
+            # 注册页（独立全屏，无 ShellLayout）
+            ft.Route(path="register", component=RegisterView),
+            # 主应用（含侧边栏、标题栏）
             ft.Route(
                 component=ShellLayout,
                 children=[
