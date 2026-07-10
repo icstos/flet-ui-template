@@ -33,11 +33,22 @@ def ListPanel():
     Returns:
         列表面板容器。
     """
-    module_id, item_id = parse_workspace(ft.use_route_location())
+    location = ft.use_route_location()
+    module_id, item_id = parse_workspace(location)
 
     list_width, set_list_width = ft.use_state(theme.LIST_DEFAULT)
     refresh_count, set_refresh_count = ft.use_state(0)
-    items = get_items(module_id)
+    search_query, set_search_query = ft.use_state("")
+
+    ft.use_effect(lambda: set_search_query(""), dependencies=[location])
+    all_items = get_items(module_id)
+    items = [
+        it
+        for it in all_items
+        if not search_query
+        or search_query.lower() in it.name.lower()
+        or search_query.lower() in it.preview.lower()
+    ]
     module_label = next((m.label for m in get_modules() if m.id == module_id), "")
 
     if not item_id and items:
@@ -216,26 +227,23 @@ def ListPanel():
                                         weight=ft.FontWeight.W_700,
                                         color=theme.C_TEXT,
                                     ),
-                                    ft.Container(
+                                    ft.TextField(
+                                        value=search_query,
+                                        on_change=lambda e: set_search_query(
+                                            e.control.value or ""
+                                        ),
+                                        hint_text="搜索",
+                                        prefix_icon=ft.Icons.SEARCH,
                                         height=36,
+                                        text_size=13,
                                         border_radius=8,
                                         bgcolor=theme.C_SEARCH_BG,
-                                        padding=ft.Padding.symmetric(horizontal=12),
-                                        content=ft.Row(
-                                            [
-                                                ft.Icon(
-                                                    ft.Icons.SEARCH,
-                                                    size=18,
-                                                    color=theme.C_TEXT_SEC,
-                                                ),
-                                                ft.Text(
-                                                    "搜索",
-                                                    size=13,
-                                                    color=theme.C_TEXT_SEC,
-                                                ),
-                                            ],
-                                            spacing=8,
+                                        border_color="transparent",
+                                        focused_border_color=theme.C_ACCENT,
+                                        content_padding=ft.Padding.symmetric(
+                                            horizontal=4, vertical=2
                                         ),
+                                        dense=True,
                                     ),
                                 ],
                                 spacing=10,
