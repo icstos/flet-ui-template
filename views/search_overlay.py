@@ -122,7 +122,7 @@ def SearchOverlay(show: bool, on_close):
                                 ft.TextField(
                                     value=query,
                                     hint_text="搜索条目…",
-                                    border=ft.InputBorder.NONE,
+                                    border=ft.NoInputBorder(),
                                     autofocus=True,
                                     expand=True,
                                     on_change=lambda e: set_query(

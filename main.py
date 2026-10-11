@@ -26,9 +26,6 @@ def setup_window(page: ft.Page) -> None:
     colors = cfg.colors
 
     page.title = win.title
-    page.padding = 0
-    page.spacing = 0
-    page.bgcolor = colors.content_bg
 
     page.fonts = {
         "AlibabaPuHuiTi": "assets/fonts/AlibabaPuHuiTi-3-55-Regular.otf",
@@ -46,5 +43,40 @@ def setup_window(page: ft.Page) -> None:
         page.window.title_bar_hidden = True
 
 
+@ft.component
+def RootView():
+    """应用根视图。
+
+    Flet 1.x 起 ``page.padding`` / ``page.spacing`` / ``page.bgcolor``
+    已不再是 Page 的属性，直接赋值不报错但也不生效，
+    因此页面级背景色改由这一层 Container 承载。
+
+    Returns:
+        应用根容器。
+    """
+    colors = get_config().colors
+
+    return ft.Container(
+        content=App(),
+        expand=True,
+        bgcolor=colors.content_bg,
+        padding=0,
+    )
+
+
+def build_app(page: ft.Page) -> None:
+    """渲染应用根视图。
+
+    注意：``@ft.component`` 组件不能在普通函数里直接调用 —— 必须经由
+    ``page.render(...)``，它会建立 Renderer 渲染上下文；否则会抛
+    ``RuntimeError: No current renderer is set``。
+    ``page.render`` 接受的是组件函数本身，而不是已实例化的控件。
+
+    Args:
+        page: Flet 页面对象。
+    """
+    page.render(RootView)
+
+
 if __name__ == "__main__":
-    ft.run(lambda page: page.render(App), before_main=setup_window)
+    ft.run(build_app, before_main=setup_window)

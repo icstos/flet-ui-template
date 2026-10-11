@@ -109,7 +109,7 @@ def LoginView():
             username_field,
             password_field,
             ft.Text(error, size=13, color="#e74c3c") if error else ft.Container(height=0),
-            ft.ElevatedButton(
+            ft.Button(
                 "登录",
                 on_click=do_login,
                 width=320,
@@ -178,7 +178,7 @@ def RegisterView():
             password_field,
             confirm_field,
             ft.Text(error, size=13, color="#e74c3c") if error else ft.Container(height=0),
-            ft.ElevatedButton(
+            ft.Button(
                 "注册",
                 on_click=do_register,
                 width=320,
@@ -257,7 +257,7 @@ def ChangePasswordView():
             confirm_field,
             ft.Text(error, size=13, color="#e74c3c") if error else ft.Container(height=0),
             ft.Text(success, size=13, color="#50c878") if success else ft.Container(height=0),
-            ft.ElevatedButton(
+            ft.Button(
                 "确认修改",
                 on_click=do_change,
                 bgcolor=theme.C_ACCENT,

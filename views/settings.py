@@ -152,7 +152,7 @@ def SettingsView():
                 ft.Divider(),
                 # 退出登录
                 ft.Text("账号操作", weight=ft.FontWeight.W_600, color=theme.C_TEXT),
-                ft.ElevatedButton(
+                ft.Button(
                     "退出登录",
                     on_click=lambda _: (
                         clear_auth(),
@@ -218,7 +218,7 @@ def SettingsView():
                 # 操作按钮
                 ft.Row(
                     [
-                        ft.ElevatedButton(
+                        ft.Button(
                             "保存",
                             on_click=_apply_and_save,
                             bgcolor=theme.C_ACCENT,

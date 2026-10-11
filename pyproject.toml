@@ -7,7 +7,7 @@ name = "cstos"
 version = "0.1.0"
 description = "CSTOS desktop application"
 requires-python = ">=3.12"
-dependencies = ["flet>=0.85.3", "sqlmodel>=0.0.22"]
+dependencies = ["flet>=1.0.4,<2", "sqlmodel>=0.0.22"]
 
 [project.scripts]
 cstos = "main:main"
