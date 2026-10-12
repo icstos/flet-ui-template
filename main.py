@@ -1,82 +1,68 @@
-"""CSTOS 应用入口模块。
+"""CSTOS 应用入口。
 
-负责初始化配置、数据库，并启动 Flet 桌面应用。
+职责仅有两项：
+    1. 通过组合根装配依赖（:func:`container.build_container`）；
+    2. 把根视图交付给 Flet 运行时。
+
+界面完全由状态派生，因此 ``build_app`` 只需一行 ``page.render``。
 """
+
+from __future__ import annotations
 
 import flet as ft
 
-from config import get_config, load_config
-from database import init_db
-from views.app import App
+from container import AppContainer, build_container
+from models import FONT_ASSET_PATH, FONT_FAMILY, WindowSettings
+from view.app import RootWithContainer
 
 
-def setup_window(page: ft.Page) -> None:
-    """应用启动前的初始化工作。
+def apply_window_settings(
+    page: ft.Page, window: WindowSettings, content_bg: str
+) -> None:
+    """把窗口配置应用到页面。
 
-    加载配置文件、初始化数据库，并根据配置设置窗口属性。
+    Flet 1.x 中 ``page.padding`` / ``page.spacing`` / ``page.bgcolor``
+    已不是 ``Page`` 的属性，直接赋值不会报错但也不会生效；
+    页面背景由根视图的容器承载，窗口背景则由 ``window.bgcolor`` 承担。
 
     Args:
-        page: Flet 页面对象。
+        page: Flet 页面。
+        window: 窗口配置。
+        content_bg: 内容区背景色（同时作为窗口底色，避免拖动时露白）。
     """
-    load_config()
-    init_db()
+    page.title = window.title
+    page.fonts = {FONT_FAMILY: FONT_ASSET_PATH}
+    page.theme = ft.Theme(font_family=FONT_FAMILY)
 
-    cfg = get_config()
-    win = cfg.window
-    colors = cfg.colors
+    page.window.width = window.width
+    page.window.height = window.height
+    page.window.min_width = window.min_width
+    page.window.min_height = window.min_height
+    page.window.bgcolor = content_bg
 
-    page.title = win.title
-
-    page.fonts = {
-        "AlibabaPuHuiTi": "assets/fonts/AlibabaPuHuiTi-3-55-Regular.otf",
-    }
-    page.theme = ft.Theme(font_family="AlibabaPuHuiTi")
-
-    page.window.width = win.width
-    page.window.height = win.height
-    page.window.min_width = win.min_width
-    page.window.min_height = win.min_height
-    page.window.bgcolor = colors.content_bg
-
-    if win.frameless:
+    if window.frameless:
         page.window.frameless = True
         page.window.title_bar_hidden = True
 
 
-@ft.component
-def RootView():
-    """应用根视图。
+def main() -> None:
+    """启动应用。"""
+    container: AppContainer = build_container()
 
-    Flet 1.x 起 ``page.padding`` / ``page.spacing`` / ``page.bgcolor``
-    已不再是 Page 的属性，直接赋值不报错但也不生效，
-    因此页面级背景色改由这一层 Container 承载。
+    def setup_window(page: ft.Page) -> None:
+        apply_window_settings(
+            page,
+            container.settings_service.window(),
+            container.settings_service.colors().content_bg,
+        )
 
-    Returns:
-        应用根容器。
-    """
-    colors = get_config().colors
+    def build_app(page: ft.Page) -> None:
+        # @ft.component 组件不能直接调用：page.render 会建立渲染上下文；
+        # 且它接收的是组件函数本身，而非已实例化的控件。
+        page.render(RootWithContainer, container)
 
-    return ft.Container(
-        content=App(),
-        expand=True,
-        bgcolor=colors.content_bg,
-        padding=0,
-    )
-
-
-def build_app(page: ft.Page) -> None:
-    """渲染应用根视图。
-
-    注意：``@ft.component`` 组件不能在普通函数里直接调用 —— 必须经由
-    ``page.render(...)``，它会建立 Renderer 渲染上下文；否则会抛
-    ``RuntimeError: No current renderer is set``。
-    ``page.render`` 接受的是组件函数本身，而不是已实例化的控件。
-
-    Args:
-        page: Flet 页面对象。
-    """
-    page.render(RootView)
+    ft.run(build_app, before_main=setup_window)
 
 
 if __name__ == "__main__":
-    ft.run(build_app, before_main=setup_window)
+    main()

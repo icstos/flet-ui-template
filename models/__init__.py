@@ -1,105 +1,60 @@
-"""数据模型模块。
+"""模型层。
 
-定义 SQLModel 数据库表模型，包括模块、条目和消息三个核心实体。
+定义核心数据结构、状态枚举与常量，并提供响应式状态原语。
+本层**不含任何业务逻辑**，也**不做任何 IO**，因此可被其它所有层依赖。
 """
 
-from sqlmodel import Field, Relationship, SQLModel
+from __future__ import annotations
 
+from models.constants import (
+    COLOR_PRESETS,
+    FONT_ASSET_PATH,
+    FONT_FAMILY,
+    LOGIN_ROUTE,
+    REGISTER_ROUTE,
+    ROOT_ROUTE,
+    SETTINGS_ROUTE,
+)
+from models.entities import (
+    DEFAULT_AVATAR_COLOR,
+    Item,
+    Message,
+    Module,
+    User,
+)
+from models.enums import MessageRole, ModuleId
+from models.reactive import Listener, Observable
+from models.route import DEFAULT_MODULE_ID, WorkspaceRoute
+from models.settings import (
+    AppSettings,
+    ColorSettings,
+    DatabaseSettings,
+    LayoutSettings,
+    WindowSettings,
+)
 
-class Module(SQLModel, table=True):
-    """功能模块模型。
-
-    表示左侧导航栏中的一个功能模块（聊天、通讯录、邮箱等）。
-
-    Attributes:
-        id: 模块唯一标识。
-        label: 模块显示名称。
-        icon: 未选中状态图标名。
-        icon_filled: 选中状态图标名。
-        sort_order: 排序序号。
-    """
-
-    id: str = Field(primary_key=True)
-    label: str
-    icon: str
-    icon_filled: str
-    sort_order: int = 0
-
-    items: list["Item"] = Relationship(back_populates="module")
-
-
-class Item(SQLModel, table=True):
-    """条目模型。
-
-    表示某个模块下的列表条目（聊天会话、联系人、邮件等）。
-
-    Attributes:
-        id: 条目唯一标识。
-        module_id: 所属模块 ID。
-        name: 条目名称。
-        subtitle: 副标题（如职位、邮箱地址等）。
-        preview: 预览文本。
-        time: 时间显示文本。
-        color: 头像背景色。
-        detail_title: 详情页标题。
-        detail_body: 详情页正文内容。
-        is_unread: 是否未读。
-        is_pinned: 是否置顶。
-        is_hidden: 是否隐藏。
-    """
-
-    id: str = Field(primary_key=True)
-    module_id: str = Field(foreign_key="module.id", index=True)
-    name: str
-    subtitle: str = ""
-    preview: str = ""
-    time: str = ""
-    color: str = "#3b7cff"
-    detail_title: str = ""
-    detail_body: str = ""
-    is_unread: bool = Field(default=False)
-    is_pinned: bool = Field(default=False)
-    is_hidden: bool = Field(default=False)
-
-    module: Module | None = Relationship(back_populates="items")
-    messages: list["Message"] = Relationship(back_populates="item", cascade_delete=True)
-
-
-class Message(SQLModel, table=True):
-    """消息模型。
-
-    表示聊天会话中的一条消息。
-
-    Attributes:
-        id: 消息自增 ID。
-        item_id: 所属条目 ID。
-        role: 消息角色（"me" 己方 / "them" 对方）。
-        text: 消息内容。
-        sort_order: 排序序号。
-    """
-
-    id: int | None = Field(default=None, primary_key=True)
-    item_id: str = Field(foreign_key="item.id", index=True)
-    role: str
-    text: str
-    sort_order: int = 0
-
-    item: Item | None = Relationship(back_populates="messages")
-
-
-class User(SQLModel, table=True):
-    """用户模型。
-
-    表示系统用户，用于登录认证。
-
-    Attributes:
-        id: 用户自增 ID。
-        username: 用户名（唯一）。
-        password_hash: 密码哈希值（格式：salt$hash）。
-        avatar_color: 头像背景色。
-    """
-
-    id: int | None = Field(default=None, primary_key=True)
-    username: str = Field(unique=True, index=True)
-    password_hash: str
-    avatar_color: str = "#3b7cff"
+__all__ = [
+    "COLOR_PRESETS",
+    "DEFAULT_AVATAR_COLOR",
+    "DEFAULT_MODULE_ID",
+    "FONT_ASSET_PATH",
+    "FONT_FAMILY",
+    "LOGIN_ROUTE",
+    "REGISTER_ROUTE",
+    "ROOT_ROUTE",
+    "SETTINGS_ROUTE",
+    "AppSettings",
+    "ColorSettings",
+    "DatabaseSettings",
+    "Item",
+    "LayoutSettings",
+    "Listener",
+    "Message",
+    "MessageRole",
+    "Module",
+    "ModuleId",
+    "Observable",
+    "User",
+    "WindowSettings",
+    "WorkspaceRoute",
+]

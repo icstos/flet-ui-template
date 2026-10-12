@@ -13,43 +13,99 @@ Enterprise collaboration desktop application built with Flet, featuring chat, co
 
 ## Tech Stack
 
-- **UI Framework**: [Flet](https://flet.dev/) >= 0.85.0
+- **UI Framework**: [Flet](https://flet.dev/) >= 1.0.4, < 2
 - **Database**: SQLite + [SQLModel](https://sqlmodel.tiangolo.com/) >= 0.0.22
 - **Configuration**: TOML config file + dataclass typed loading
-- **Python Version**: >= 3.9
+- **Python Version**: >= 3.12
+
+## Architecture
+
+MVVM with strict layered dependency inversion. Dependencies flow in one
+direction only — `View -> ViewModel -> Service -> Infra` — and every layer may
+use `Models`. High-level layers depend on **abstractions**, never on concrete
+technology.
+
+| Layer | Responsibility | May import |
+| --- | --- | --- |
+| `models` | Entities, enums, constants, route value objects, reactive primitives. No business logic, no I/O. | `models` |
+| `infra` | Wraps technology (TOML, SQLite, JSON, hashing) behind `Protocol` interfaces defined in `infra/protocols.py`. | `models`, `infra` |
+| `service` | Orchestrates business use cases against those interfaces. | `models`, `infra.protocols`, `service` |
+| `viewmodel` | Pure-Python UI state. Calls services, notifies subscribers. **Zero Flet imports.** | `models`, `service`, `viewmodel` |
+| `view` | Declarative Flet components. Renders state, dispatches events. No business logic. | `models`, `viewmodel`, `view` |
+
+UI is a pure function of state (`UI = f(state)`). A `ViewModel` extends
+`Observable`; `view/hooks.py::use_view_model` subscribes a component to a
+view model, and any state change re-renders it. Theme changes therefore apply
+instantly without reload hacks.
+
+`container.py` is the composition root (the only place that knows which
+concrete implementation satisfies each interface) and `main.py` is the entry
+point. Neither is part of the five layers.
 
 ## Project Structure
 
 ```
-test_template/
-├── components/          # Reusable UI components
-│   ├── avatar.py        # Circular avatar component
-│   ├── detail_panel.py  # Detail panel component
-│   └── title_bar.py     # Custom title bar
-├── database/            # Database layer
-│   └── __init__.py      # Engine, session, initialization & seed data
-├── models/              # Data models
-│   └── __init__.py      # Module / Item / Message model definitions
-├── my_utils/            # Utility functions
-│   ├── icons.py         # Icon name mapping
-│   └── route.py         # Route path parsing
-├── services/            # Business logic layer
-│   └── repository.py    # Data access layer
-├── views/               # Page views
-│   ├── app.py           # Root route configuration
-│   ├── shell.py         # Shell layout (title bar + navigation)
-│   ├── nav_rail.py      # Side navigation rail
-│   ├── workspace.py      # Workspace layout (list + detail)
-│   ├── list_panel.py     # List panel
-│   ├── detail_chat.py    # Chat detail page
-│   ├── detail_generic.py  # Generic detail page
-│   └── settings.py       # Settings page
-├── config.py             # Configuration loading & management
-├── config.toml           # Configuration file
-├── theme.py              # Theme constants
-├── main.py               # Application entry point
-└── pyproject.toml        # Project configuration
+cs-ui-template/
+├── models/                  # Layer 1 — data structures, no logic, no I/O
+│   ├── entities.py          # Module / Item / Message / User (SQLModel)
+│   ├── enums.py             # ModuleId, MessageRole
+│   ├── settings.py          # AppSettings and its four sections
+│   ├── route.py             # WorkspaceRoute value object
+│   ├── reactive.py          # Observable (state + notify)
+│   ├── session.py           # AuthSession value object
+│   └── constants.py         # Color presets, routes, font constants
+├── infra/                   # Layer 2 — technology behind protocols
+│   ├── protocols.py         # SettingsStore / SessionStore / repositories / hasher
+│   ├── config_store.py      # TOML read & write
+│   ├── database.py          # Engine, session, schema migration
+│   ├── seed.py              # Demo data + default account
+│   ├── workspace_repository.py
+│   ├── user_repository.py
+│   ├── auth_store.py        # Login-state JSON persistence
+│   └── password_hasher.py   # PBKDF2-HMAC-SHA256
+├── service/                 # Layer 3 — business use cases
+│   ├── auth_service.py      # Login / register / change password / logout
+│   ├── workspace_service.py # Modules, items, messages, search, pin, hide, delete
+│   └── settings_service.py  # Read / update / persist configuration
+├── viewmodel/               # Layer 4 — pure-Python UI state
+│   ├── base.py              # ViewModel + RouteTarget convention
+│   ├── theme.py             # ThemeState (global reactive palette)
+│   ├── shell.py             # Tabs + auth guard
+│   ├── title_bar.py         # Maximize flag, hovered button
+│   ├── nav_rail.py          # Modules, session, active module
+│   ├── list_panel.py        # Items, query, width, context-menu actions
+│   ├── chat_detail.py       # Messages + draft
+│   ├── generic_detail.py    # Detail body
+│   ├── search_overlay.py    # Open flag, query, results
+│   ├── settings.py          # Editable colours, save / restore / logout
+│   └── auth.py              # Login / register / change-password forms
+├── view/                    # Layer 5 — declarative Flet components
+│   ├── hooks.py             # use_view_model: the only state->render bridge
+│   ├── contexts.py          # Container injection
+│   ├── app.py               # Root view + route tree
+│   ├── shell.py             # Title bar + nav rail + content + search
+│   ├── title_bar.py         # Custom frameless title bar
+│   ├── tab_bar.py           # Tab strip
+│   ├── nav_rail.py          # Side navigation rail
+│   ├── workspace.py         # List + detail two-column layout
+│   ├── list_panel.py        # List, search, context menu, drag resize
+│   ├── detail_chat.py       # Chat bubbles + composer
+│   ├── detail_generic.py    # Scrolling detail body
+│   ├── search_overlay.py    # Global search dialog
+│   ├── settings.py          # Settings page
+│   ├── auth.py              # Login / register / change-password views
+│   ├── icons.py             # Icon-name resolution
+│   └── widgets/             # Presentational-only widgets (avatar, detail panel)
+├── tests/                   # Automated tests
+│   ├── test_architecture.py # Enforces the layering rules above
+│   ├── test_viewmodel.py    # Business behaviour, no UI required
+│   ├── test_flet_smoke.py   # Renders every component offline
+│   └── manual/              # Real-window verification scripts
+├── container.py             # Composition root
+├── main.py                  # Entry point
+└── config.toml              # Configuration file
 ```
+
 
 ## Installation
 
@@ -165,22 +221,30 @@ Configuration file is located at [config.toml](config.toml), with the following 
 
 ## Development
 
+### Running Tests
+
+```bash
+pytest tests/                      # Architecture rules + view models + component rendering
+python tests/manual/startup_check.py   # Launch the real app and report runtime errors
+python tests/manual/render_check.py    # Screenshot the window and detect Flutter grey blocks
+python tests/manual/theme_check.py     # Drive a real theme change and verify it applies
+```
+
+`tests/test_architecture.py` statically enforces the layering rules, so a
+layering violation fails the suite instead of silently rotting.
+
 ### Adding a New Module
 
-1. Add a new `Module` record in the database seed data
-2. Add corresponding route configuration in [views/app.py](views/app.py)
-3. Create a custom detail view component if needed
+1. Add a `Module` record in `infra/seed.py`
+2. Add the route in `view/app.py` and a view model in `viewmodel/`
+3. Register the view model in `container.py`
 
 ### Customizing Theme
 
-Click the settings button in the bottom-left corner to adjust:
-
-- Accent color
-- Sidebar color
-- Content background
-- Text color
-
-After clicking "Save", the configuration will be written to `config.toml` and take effect immediately.
+Click the settings button in the bottom-left corner to adjust accent, sidebar,
+content background and text colour. Pressing "Save" writes `config.toml` and
+pushes the new palette into `ThemeState`, which re-renders every subscribed
+view immediately — no restart and no navigation required.
 
 ## License
 

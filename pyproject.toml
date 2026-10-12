@@ -17,11 +17,9 @@ include-package-data = true
 
 [tool.setuptools.packages.find]
 include = [
-    "components",
-    "database",
     "models",
-    "my_utils",
-    "services",
-    "views",
-    "*",
+    "infra",
+    "service",
+    "viewmodel",
+    "view",
 ]
