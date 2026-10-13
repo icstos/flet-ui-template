@@ -33,7 +33,7 @@ def apply_window_settings(
     page.title = window.title
     page.fonts = {FONT_FAMILY: FONT_ASSET_PATH}
     page.theme = ft.Theme(font_family=FONT_FAMILY)
-
+    page.padding = ft.Padding.all(0)
     page.window.width = window.width
     page.window.height = window.height
     page.window.min_width = window.min_width

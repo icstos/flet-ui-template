@@ -135,7 +135,7 @@ Configuration file is located at [config.toml](config.toml), with the following 
 
 | Field          | Type | Default | Description                    |
 | -------------- | ---- | ------- | ------------------------------ |
-| `nav_width`    | int  | 68      | Side navigation bar width (px) |
+| `nav_width`    | int  | 48      | Side navigation bar width (px) |
 | `list_min`     | int  | 200     | List panel minimum width (px)  |
 | `list_max`     | int  | 480     | List panel maximum width (px)  |
 | `list_default` | int  | 300     | List panel default width (px)  |

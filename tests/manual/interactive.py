@@ -7,8 +7,14 @@
     theme —— 进入设置页，为后续手工观察或截图留出窗口
     login —— 观察未登录时的重定向结果
 
-坐标均为**逻辑**客户区坐标（物理像素 / DPI）。窗口内的布局是确定的：
-    * 侧栏宽 ``nav_width``（默认 68），齿轮位于距底边 40px 处；
+坐标均为**逻辑客户区**坐标。注意：Flet 渲染的内容整体相对客户区左上角有约
+10.3px 的根视图内边距（见 :data:`probe_support.ROOT_PADDING`），按布局公式
+推算坐标时必须加上它，否则点击会稳定偏出约 10px。
+窗口内的布局是确定的：
+    * 侧栏宽 ``nav_width``（默认 54），齿轮中心横坐标
+      ``ROOT_PADDING + nav_width/2``；
+    * 齿轮中心纵坐标 ``客户区高 - ROOT_PADDING - (垂直内边距 + 底部内边距
+      + 半个按钮高)``；
     * 标题栏高 ``title_bar_h``（默认 40）。
 """
 
@@ -18,17 +24,31 @@ import sys
 import time
 
 from probe_support import (
+    ROOT_PADDING,
     WINDOW_TITLE,
     cleanup_processes,
+    client_logical_size,
     drv,
     launch,
-    logical_size,
     report_errors,
     teardown,
 )
 
-NAV_WIDTH = 68
-GEAR_BOTTOM_OFFSET = 40
+NAV_WIDTH = 48
+RAIL_PADDING_V = 8
+BOTTOM_PADDING = 6
+SETTINGS_BUTTON_SIZE = 32
+
+
+def gear_position(client_height: int) -> tuple[int, int]:
+    """按布局公式推算设置齿轮的可点击坐标（客户区逻辑坐标）。"""
+    x = ROOT_PADDING + NAV_WIDTH / 2
+    y = (
+        client_height
+        - ROOT_PADDING
+        - (RAIL_PADDING_V + BOTTOM_PADDING + SETTINGS_BUTTON_SIZE / 2)
+    )
+    return int(x), int(y)
 
 
 def main() -> int:
@@ -45,8 +65,8 @@ def main() -> int:
             return 1
 
         time.sleep(4.5)
-        width, height, dpi = logical_size(hwnd)
-        print(f"窗口 hwnd={hwnd} 逻辑尺寸 {width}x{height} dpi={dpi}")
+        width, height = client_logical_size(hwnd)
+        print(f"窗口 hwnd={hwnd} 客户区逻辑尺寸 {width}x{height}")
 
         drv.ensure_foreground(hwnd)
         time.sleep(0.6)
@@ -64,7 +84,7 @@ def main() -> int:
         shot("00_start")
 
         if scenario == "theme":
-            click(NAV_WIDTH // 2, height - GEAR_BOTTOM_OFFSET, "设置齿轮")
+            click(*gear_position(height), "设置齿轮")
             shot("01_settings")
         else:
             shot("01_state")

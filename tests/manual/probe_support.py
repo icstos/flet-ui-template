@@ -44,6 +44,17 @@ _PS_CLEANUP = (
     "-ErrorAction SilentlyContinue }"
 )
 
+ROOT_PADDING = 10.3
+"""根视图（``page.views[0]``）的内边距，单位逻辑像素。
+
+Flet 渲染出的内容整体相对客户区左上角偏移约 10.3px（DPI 1.75 实测 10.29）。
+``print_window`` 得到的是窗口矩形坐标，而 :func:`drv.click_at` 使用的客户区
+坐标与之相同，因此**截图量到的坐标需先减去本偏移**才是可点击坐标；
+反之，按布局公式算出的坐标需**加上**本偏移。
+
+曾因漏掉这一项，导致点击稳定偏出约 10px 而全部失效。
+"""
+
 
 def cleanup_processes() -> None:
     """清理本项目残留的 flet / python 进程。"""
@@ -54,15 +65,17 @@ def cleanup_processes() -> None:
     )
 
 
-def logical_size(hwnd: int) -> tuple[int, int, float]:
-    """返回窗口的逻辑宽高与 DPI 缩放比。"""
-    rect = drv.rect_of(hwnd)
+def client_logical_size(hwnd: int) -> tuple[int, int]:
+    """返回**客户区**的逻辑宽高。
+
+    本应用是无边框窗口，Windows 会在窗口矩形之外留出一圈不可见的缩放宽紧边框，
+    导致客户区比窗口矩形小约 10px（DPI 1.75 下约 17~18 物理像素）。
+    ``click_at`` 接收的是客户区坐标，因此**必须**用本函数换算，
+    否则点击会系统性偏出（曾因误用窗口尺寸导致点击稳定偏移 10px 而失效）。
+    """
+    _, _, client_width, client_height = drv.client_origin(hwnd)
     dpi = ctypes.windll.user32.GetDpiForWindow(hwnd) / 96.0
-    return (
-        int((rect.right - rect.left) / dpi),
-        int((rect.bottom - rect.top) / dpi),
-        dpi,
-    )
+    return int(client_width / dpi), int(client_height / dpi)
 
 
 def launch() -> subprocess.Popen[str]:

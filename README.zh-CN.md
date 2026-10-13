@@ -132,7 +132,7 @@ python main.py
 
 | 字段             | 类型  | 默认值 | 说明           |
 | -------------- | --- | --- | ------------ |
-| `nav_width`    | int | 68  | 侧边导航栏宽度（px）  |
+| `nav_width`    | int | 48  | 侧边导航栏宽度（px）  |
 | `list_min`     | int | 200 | 列表面板最小宽度（px） |
 | `list_max`     | int | 480 | 列表面板最大宽度（px） |
 | `list_default` | int | 300 | 列表面板默认宽度（px） |

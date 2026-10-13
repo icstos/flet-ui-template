@@ -15,8 +15,8 @@ from dataclasses import dataclass, field
 class LayoutSettings:
     """布局尺寸配置。"""
 
-    nav_width: int = 68
-    """侧边导航栏宽度。"""
+    nav_width: int = 48
+    """侧边导航栏宽度（窄图标轨）。"""
 
     list_min: int = 200
     """列表面板最小宽度。"""
