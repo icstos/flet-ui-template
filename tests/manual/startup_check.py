@@ -1,6 +1,6 @@
 """真实启动应用，捕获运行期异常并在数秒后自动退出。
 
-用于验证 Flet 1.0.4 下真实的启动路径（窗口创建、字体加载、组件渲染）。
+用于验证 Flet 1.0.5 下真实的启动路径（窗口创建、字体加载、组件渲染）。
 Python 侧不报错并不等于 Flutter 侧渲染成功——灰块问题请用 render_check.py。
 """
 
@@ -37,7 +37,11 @@ def main() -> int:
         print("\n" + "=" * 64)
         print(
             "进程状态: "
-            + ("仍在运行(启动成功)" if still_running else f"已退出 code={proc.returncode}")
+            + (
+                "仍在运行(启动成功)"
+                if still_running
+                else f"已退出 code={proc.returncode}"
+            )
         )
         print("=" * 64)
         output = teardown(proc)

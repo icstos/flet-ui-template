@@ -13,7 +13,7 @@
 
 ## 技术栈
 
-- **UI 框架**：[Flet](https://flet.dev/) >= 1.0.4, < 2
+- **UI 框架**：[Flet](https://flet.dev/) >= 1.0.5, < 2
 - **数据库**：SQLite + [SQLModel](https://sqlmodel.tiangolo.com/) >= 0.0.22
 - **配置管理**：TOML 配置文件 + dataclass 类型化加载
 - **Python 版本**：>= 3.12
@@ -115,7 +115,7 @@ pip install -e .
 ### 方式二：使用依赖文件
 
 ```bash
-pip install "flet>=1.0.4,<2" "sqlmodel>=0.0.22"
+pip install "flet>=1.0.5,<2" "sqlmodel>=0.0.22"
 ```
 
 ## 运行

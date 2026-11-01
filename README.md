@@ -13,7 +13,7 @@ Enterprise collaboration desktop application built with Flet, featuring chat, co
 
 ## Tech Stack
 
-- **UI Framework**: [Flet](https://flet.dev/) >= 1.0.4, < 2
+- **UI Framework**: [Flet](https://flet.dev/) >= 1.0.5, < 2
 - **Database**: SQLite + [SQLModel](https://sqlmodel.tiangolo.com/) >= 0.0.22
 - **Configuration**: TOML config file + dataclass typed loading
 - **Python Version**: >= 3.12
